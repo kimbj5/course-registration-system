@@ -11,11 +11,9 @@ A web-based course registration system for INFO 465 (VCU, Fall 2026). Students c
 
 ## How the System Works
 
-| Layer | Technology | Where it runs |
-| | | |
-| Website | HTML, CSS, JavaScript | Served by the Express app |
-| API | Node.js and Express (REST) | Amazon EC2, Amazon Linux 2023 |
-| Database | MySQL | Amazon RDS, in a private subnet reachable only from the app server |
+- Website: HTML, CSS, and JavaScript pages, served by the Express app.
+- API: Node.js and Express (REST), running on Amazon EC2 with Amazon Linux 2023.
+- Database: MySQL on Amazon RDS, in a private subnet that only the app server can reach.
 
 The browser sends requests to the API. The API applies the rules, such as seat limits and no duplicate registrations, reads and writes the database, and sends the results back to the page.
 
