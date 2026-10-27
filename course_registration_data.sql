@@ -20,7 +20,7 @@ VALUES
 
 INSERT INTO Student (first_name, last_name, password_hash)
 VALUES
-('Nathan', 'Reinoehl'), SHA2('TestPass123', 256)),
+('Nathan', 'Reinoehl', SHA2('TestPass123', 256)),
 ('John', 'Miller', SHA2('TestPass123', 256)),
 ('Emily', 'Carter', SHA2('TestPass123', 256)),
 ('Jessica', 'Lee', SHA2('TestPass123', 256)),
