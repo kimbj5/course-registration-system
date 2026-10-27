@@ -3,7 +3,7 @@ VALUES
 ('Information Systems', 'INFO 465', 'Cloud Computing', 3),
 ('Information Systems', 'INFO 370', 'Database Systems', 3),
 ('Information Systems', 'INFO 325', 'Systems Analysis', 3),
-('Information Systems', 'INFO 300', 'Information Technology Infrastructure', 3);
+('Information Systems', 'INFO 300', 'Information Technology Infrastructure', 3),
 ('Marketing', 'MKTG 302', 'Marketing Research', 3),
 ('Marketing', 'MKTG 410', 'Digital Marketing', 3);
 
@@ -13,7 +13,7 @@ VALUES
 ('Michael', 'Brown'),
 ('David', 'Wilson'),
 ('Emily', 'Davis'),
-('Jennifer', 'Smith');
+('Jennifer', 'Smith'),
 ('Michael', 'McGarry');
 
 INSERT INTO Student (first_name, last_name)
@@ -36,7 +36,7 @@ VALUES
 (2, 2, '001', 'TR', '10:30 AM - 11:45 AM', 'Building A Room 101', 30),
 (3, 3, '001', 'MW', '01:00 PM - 02:15 PM', 'Hybrid', 20),
 (4, 4, '001', 'TR', '02:30 PM - 03:45 PM', 'Online', 35),
-(5, 5, '001', 'F', '09:00 AM - 11:50 AM', 'Building B Room 205', 40);
+(5, 5, '001', 'F', '09:00 AM - 11:50 AM', 'Building B Room 205', 40),
 (6, 6, '001', 'MW', '12:30 PM - 01:45 PM', 'Building B Room 108', 30);
 
 INSERT INTO Prerequisite (course_id, prerequisite_course_id)
