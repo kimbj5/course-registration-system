@@ -42,6 +42,7 @@ CREATE TABLE Enrollment (
     student_id INT NOT NULL,
     session_id INT NOT NULL,
     status VARCHAR(30),
+    UNIQUE (student_id, session_id),
     FOREIGN KEY (student_id) REFERENCES Student(student_id),
     FOREIGN KEY (session_id) REFERENCES Session(session_id)
 );
