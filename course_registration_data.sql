@@ -38,9 +38,9 @@ VALUES
 (1, 1, '001', 'MW', '09:00 AM - 10:15 AM', 'Online', 25),
 (2, 2, '001', 'TR', '10:30 AM - 11:45 AM', 'Building A Room 101', 30),
 (3, 3, '001', 'MW', '01:00 PM - 02:15 PM', 'Hybrid', 20),
-(4, 4, '001', 'TR', '02:30 PM - 03:45 PM', 'Online', 35),
-(5, 5, '001', 'F', '09:00 AM - 11:50 AM', 'Building B Room 205', 40),
-(6, 6, '001', 'MW', '12:30 PM - 01:45 PM', 'Building B Room 108', 30);
+(4, 6, '001', 'MW', '12:30 PM - 01:45 PM', 'Building B Room 108', 30),
+(5, 4, '001', 'F', '09:00 AM - 11:50 AM', 'Building B Room 205', 40),
+(6, 5, '001', 'MW', '12:30 PM - 01:45 PM', 'Building B Room 108', 30);
 
 INSERT INTO Prerequisite (course_id, prerequisite_course_id)
 VALUES
