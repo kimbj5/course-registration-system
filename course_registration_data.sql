@@ -20,16 +20,16 @@ VALUES
 
 INSERT INTO Student (first_name, last_name, password_hash)
 VALUES
-('Nathan', 'Reinoehl'),
-('John', 'Miller'),
-('Emily', 'Carter'),
-('Jessica', 'Lee'),
-('Daniel', 'White'),
-('Sophia', 'Martin'),
-('Olivia', 'Green'),
-('Jacob', 'Harris'),
-('Ethan', 'Young'),
-('Ava', 'Scott');
+('Nathan', 'Reinoehl'), SHA2('TestPass123', 256)),
+('John', 'Miller'), SHA2('TestPass123', 256)),
+('Emily', 'Carter'), SHA2('TestPass123', 256)),
+('Jessica', 'Lee'), SHA2('TestPass123', 256)),
+('Daniel', 'White'), SHA2('TestPass123', 256)),
+('Sophia', 'Martin'), SHA2('TestPass123', 256)),
+('Olivia', 'Green'), SHA2('TestPass123', 256)),
+('Jacob', 'Harris'), SHA2('TestPass123', 256)),
+('Ethan', 'Young'), SHA2('TestPass123', 256)),
+('Ava', 'Scott'), SHA2('TestPass123', 256));
 
 INSERT INTO Session
 (course_id, instructor_id, section, days, time, location, max_enrollment)
