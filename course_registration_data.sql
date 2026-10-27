@@ -1,3 +1,5 @@
+USE course_registration;
+
 INSERT INTO Course (department, number, name, credits)
 VALUES
 ('Information Systems', 'INFO 465', 'Cloud Computing', 3),
@@ -7,16 +9,16 @@ VALUES
 ('Marketing', 'MKTG 302', 'Marketing Research', 3),
 ('Marketing', 'MKTG 410', 'Digital Marketing', 3);
 
-INSERT INTO Instructor (first_name, last_name)
+INSERT INTO Instructor (first_name, last_name, password_hash)
 VALUES
-('Sarah', 'Johnson'),
-('Michael', 'Brown'),
-('David', 'Wilson'),
-('Emily', 'Davis'),
-('Jennifer', 'Smith'),
-('Michael', 'McGarry');
+('Sarah', 'Johnson'), SHA2('TestPass123', 256)),
+('Michael', 'Brown'), SHA2('TestPass123', 256)),
+('David', 'Wilson'), SHA2('TestPass123', 256)),
+('Emily', 'Davis'), SHA2('TestPass123', 256)),
+('Jennifer', 'Smith'), SHA2('TestPass123', 256)),
+('Michael', 'McGarry'), SHA2('TestPass123', 256));
 
-INSERT INTO Student (first_name, last_name)
+INSERT INTO Student (first_name, last_name, password_hash)
 VALUES
 ('Nathan', 'Reinoehl'),
 ('John', 'Miller'),
