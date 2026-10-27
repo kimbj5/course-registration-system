@@ -158,3 +158,8 @@ th {
     background-color: #1f3c5b;
     color: white;
 }
+ * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
