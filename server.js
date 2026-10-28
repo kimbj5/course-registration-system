@@ -9,6 +9,9 @@ const app = express();
 app.disable('x-powered-by');
 app.use(express.json());
 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
 // Serve the web pages. Only the public/ folder is exposed, so server.js, .env,
 // the SQL scripts, and package.json can never be downloaded from the site.
 app.use(express.static(path.join(__dirname, 'public')));
@@ -27,13 +30,11 @@ app.get('/health', async (req, res) => {
 
 // The endpoints from API_CONTRACT.md are added here in later tasks.
 
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 app.post('/students/login', async (req, res) => {
   const { student_id, password } = req.body;
 
-  // Check required fields
+  // Check that both fields were provided.
   if (
     student_id === undefined ||
     student_id === null ||
@@ -50,23 +51,13 @@ app.post('/students/login', async (req, res) => {
     });
   }
 
-  // Student IDs must be positive integers
-  if (!/^[1-9]\d*$/.test(String(student_id))) {
-    return res.status(400).json({
-      error: {
-        code: 'INVALID_INPUT',
-        message: 'Please enter a valid Student ID.'
-      }
-    });
-  }
-
+  // Find the student in the database.
   try {
-    // Find the student in the database
     const [students] = await db.query(
       `SELECT student_id, first_name, last_name, password_hash
        FROM Student
        WHERE student_id = ?`,
-      [Number(student_id)]
+      [student_id]
     );
 
     if (students.length === 0) {
@@ -80,7 +71,7 @@ app.post('/students/login', async (req, res) => {
 
     const student = students[0];
 
-    // Compare the submitted password with the stored hash
+    // Compare the submitted password with the stored bcrypt hash.
     const passwordMatches = await bcrypt.compare(
       password,
       student.password_hash
@@ -95,7 +86,7 @@ app.post('/students/login', async (req, res) => {
       });
     }
 
-    // Create a signed login token
+    // Make sure the JWT secret is configured.
     if (!process.env.JWT_SECRET) {
       console.error('JWT_SECRET is not configured.');
       return res.status(500).json({
@@ -106,13 +97,14 @@ app.post('/students/login', async (req, res) => {
       });
     }
 
+    // Create a token for the authenticated student.
     const token = jwt.sign(
       { student_id: student.student_id, role: 'student' },
       process.env.JWT_SECRET,
       { expiresIn: '2h' }
     );
 
-    // Never return the password or password hash
+    // Return student information and the token, never the password hash.
     return res.status(200).json({
       student_id: student.student_id,
       first_name: student.first_name,
