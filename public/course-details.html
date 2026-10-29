@@ -54,11 +54,9 @@
         </p>
     </main>
 
-    <script src="course-data.js"></script>
+
     <script>
         const courseSelect = document.getElementById("course-select");
-        const courses = Array.isArray(testCourses) ? testCourses : [];
-        const allSessions = Array.isArray(sessions) ? sessions : [];
 
         function displayCourse(course) {
             document.getElementById("continue-link").href =
