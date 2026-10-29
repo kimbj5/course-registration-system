@@ -28,7 +28,8 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// The endpoints from API_CONTRACT.md are added here in later tasks.
+   // API endpoints (see API_CONTRACT.md). Each one lives in its own file in routes/.
+   app.use('/courses', require('./routes/courses'));
 
 
 app.post('/students/login', async (req, res) => {
