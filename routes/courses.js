@@ -132,5 +132,79 @@ router.get('/', async (req, res) => {
     });
   }
 });
+// GET /courses/:id - Get details for one course
+router.get('/:id', async (req, res) => {
+  const courseId = Number(req.params.id);
+
+  if (!Number.isInteger(courseId) || courseId <= 0) {
+    return res.status(400).json({
+      error: { code: 'INVALID_ID', message: 'Invalid course ID.' }
+    });
+  }
+
+  try {
+    const [courses] = await db.query(
+      `SELECT course_id, department, number, name, credits
+       FROM Course
+       WHERE course_id = ?`,
+      [courseId]
+    );
+
+    if (courses.length === 0) {
+      return res.status(404).json({
+        error: { code: 'NOT_FOUND', message: 'Course not found.' }
+      });
+    }
+
+    const [sessions] = await db.query(
+      `SELECT s.session_id, s.section, s.days, s.time, s.location,
+              s.max_enrollment, i.instructor_id, i.first_name, i.last_name,
+              (SELECT COUNT(*)
+               FROM Enrollment e
+               WHERE e.session_id = s.session_id
+                 AND e.status = 'Enrolled') AS enrolled_count
+       FROM Session s
+       JOIN Instructor i ON i.instructor_id = s.instructor_id
+       WHERE s.course_id = ?
+       ORDER BY s.section`,
+      [courseId]
+    );
+
+    const [prerequisites] = await db.query(
+      `SELECT pc.course_id, pc.number, pc.name
+       FROM Prerequisite p
+       JOIN Course pc ON pc.course_id = p.prerequisite_course_id
+       WHERE p.course_id = ?
+       ORDER BY pc.number`,
+      [courseId]
+    );
+
+    res.json({
+      ...courses[0],
+      prerequisites,
+      sessions: sessions.map((session) => ({
+        ...session,
+        enrolled_count: Number(session.enrolled_count),
+        seats_left: Math.max(
+          0,
+          Number(session.max_enrollment) - Number(session.enrolled_count)
+        ),
+        instructor: {
+          instructor_id: session.instructor_id,
+          first_name: session.first_name,
+          last_name: session.last_name
+        }
+      }))
+    });
+  } catch (err) {
+    console.error('GET /courses/:id failed:', err.code || err.message);
+    res.status(500).json({
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Could not load course details. Please try again.'
+      }
+    });
+  }
+});
 
 module.exports = router;
