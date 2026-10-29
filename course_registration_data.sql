@@ -21,16 +21,16 @@ VALUES
 INSERT INTO Student
     (student_number, first_name, last_name, password_hash)
 VALUES
-('1001001', 'Nathan',   'Reinoehl', SHA2('TestPass123', 256)),
-('1001002', 'John',     'Miller',   SHA2('TestPass123', 256)),
-('1001003', 'Emily',    'Carter',   SHA2('TestPass123', 256)),
-('1001004', 'Jessica',  'Lee',      SHA2('TestPass123', 256)),
-('1001005', 'Daniel',   'White',    SHA2('TestPass123', 256)),
-('1001006', 'Sophia',   'Martin',   SHA2('TestPass123', 256)),
-('1001007', 'Olivia',   'Green',    SHA2('TestPass123', 256)),
-('1001008', 'Jacob',    'Harris',   SHA2('TestPass123', 256)),
-('1001009', 'Ethan',    'Young',    SHA2('TestPass123', 256)),
-('1001010', 'Ava',      'Scott',    SHA2('TestPass123', 256));
+('1001001', 'Nathan',   'Reinoehl', '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001002', 'John',     'Miller',   '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001003', 'Emily',    'Carter',   '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001004', 'Jessica',  'Lee',      '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001005', 'Daniel',   'White',    '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001006', 'Sophia',   'Martin',   '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001007', 'Olivia',   'Green',    '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001008', 'Jacob',    'Harris',   '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001009', 'Ethan',    'Young',    '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe'),
+('1001010', 'Ava',      'Scott',    '$2b$10$/DTjH0EDJreubCBrE9Y0COzpeVx/AUYvrUR.M/R82XgIBqFTKzjbe');
 
 INSERT INTO Session
 (course_id, instructor_id, section, days, time, location, max_enrollment)

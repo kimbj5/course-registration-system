@@ -9,6 +9,9 @@ const app = express();
 app.disable('x-powered-by');
 app.use(express.json());
 
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
 // Serve the web pages. Only the public/ folder is exposed, so server.js, .env,
 // the SQL scripts, and package.json can never be downloaded from the site.
 app.use(express.static(path.join(__dirname, 'public')));
@@ -26,6 +29,102 @@ app.get('/health', async (req, res) => {
 });
 
 // The endpoints from API_CONTRACT.md are added here in later tasks.
+
+
+app.post('/students/login', async (req, res) => {
+  const { student_id, password } = req.body;
+
+  // Check that both fields were provided.
+  if (
+    student_id === undefined ||
+    student_id === null ||
+    String(student_id).trim() === '' ||
+    password === undefined ||
+    password === null ||
+    String(password).trim() === ''
+  ) {
+    return res.status(400).json({
+      error: {
+        code: 'MISSING_FIELDS',
+        message: 'Please enter your Student ID and password.'
+      }
+    });
+  }
+
+  // Find the student in the database.
+  try {
+    const [students] = await db.query(
+      `SELECT student_id, first_name, last_name, password_hash
+       FROM Student
+       WHERE student_id = ?`,
+      [student_id]
+    );
+
+    if (students.length === 0) {
+      return res.status(401).json({
+        error: {
+          code: 'STUDENT_NOT_FOUND',
+          message: 'Student ID not found.'
+        }
+      });
+    }
+
+    const student = students[0];
+
+    // Compare the submitted password with the stored bcrypt hash.
+    const passwordMatches = await bcrypt.compare(
+      password,
+      student.password_hash
+    );
+
+    if (!passwordMatches) {
+      return res.status(401).json({
+        error: {
+          code: 'INCORRECT_PASSWORD',
+          message: 'Incorrect password.'
+        }
+      });
+    }
+
+    // Make sure the JWT secret is configured.
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not configured.');
+      return res.status(500).json({
+        error: {
+          code: 'SERVER_ERROR',
+          message: 'Login is temporarily unavailable.'
+        }
+      });
+    }
+
+    // Create a token for the authenticated student.
+    const token = jwt.sign(
+      { student_id: student.student_id, role: 'student' },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    // Return student information and the token, never the password hash.
+    return res.status(200).json({
+      student_id: student.student_id,
+      first_name: student.first_name,
+      last_name: student.last_name,
+      token
+    });
+  } catch (err) {
+    console.error('Student login failed:', err.code || err.message);
+
+    return res.status(500).json({
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Unable to log in right now. Please try again.'
+      }
+    });
+  }
+});
+
+
+
 
 const PORT = Number(process.env.PORT) || 3000;
 
