@@ -131,3 +131,24 @@ a browser.
   the course details page. A label such as **View Details** would match what it does.
 - Opening `course-details.html` with a course code that does not exist (for example
   `?course=FAKE`) shows INFO 301 without any message.
+
+  ### TC-INFO-11: Course details include available session registration buttons
+
+- **Steps:** Open `course-details.html`, choose a course that has sessions, and inspect each session.
+- **Expected:** Each session displays a **Register for This Session** button.
+- **Actual:** Not yet tested.
+- **Status:** Not tested
+
+### TC-INFO-12: Register button passes the selected session
+
+- **Steps:** Click **Register for This Session** for a specific session.
+- **Expected:** `student-registration.html` opens with the correct course and session selected.
+- **Actual:** Not yet tested.
+- **Status:** Not tested
+
+### TC-INFO-13: Course details endpoint returns course information
+
+- **Steps:** Request the course details endpoint for a valid course ID.
+- **Expected:** The response includes course information, prerequisites, sessions, instructor details, enrollment counts, and available seats.
+- **Actual:** Not yet tested.
+- **Status:** Not tested
