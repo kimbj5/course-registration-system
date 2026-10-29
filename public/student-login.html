@@ -50,26 +50,28 @@
             message.style.display = "block";
         }
 
-        function handleLogin(event) {
-            event.preventDefault();
 
-            const result = attemptLogin(
-                document.getElementById("student-id").value.trim(),
-                document.getElementById("password").value
-            );
+async function handleLogin(event) {
+    event.preventDefault();
 
-            if (!result.ok) {
-                showLoginMessage(result.error, "error");
-                return false;
-            }
+    const result = await attemptLogin(
+        document.getElementById("student-id").value.trim(),
+        document.getElementById("password").value
+    );
 
-            showLoginMessage("Login successful. Redirecting...", "success");
+    if (!result.ok) {
+        showLoginMessage(result.error, "error");
+        return false;
+    }
 
-            const next = new URLSearchParams(location.search).get("next");
-            const safe = /^[\w-]+\.html(\?[^#]*)?$/.test(next || "");
-            location.href = safe ? next : "course-search.html";
-            return false;
-        }
+    showLoginMessage("Login successful. Redirecting...", "success");
+
+    const next = new URLSearchParams(location.search).get("next");
+    const safe = /^[\w-]+\.html(\?[^#]*)?$/.test(next || "");
+
+    location.href = safe ? next : "course-search.html";
+    return false;
+}
     </script>
 </body>
 </html>
