@@ -32,7 +32,9 @@ This runs the whole system on your own computer: the website, the API, and a loc
 
 - **Git** from git-scm.com. Check it with `git --version`.
 - **Node.js 18 or newer** (the LTS version) from nodejs.org. Check it with `node -v`.
-- **MySQL Server 8.0 or newer** from dev.mysql.com/downloads/mysql. Remember the root password you choose while installing. On a Mac with Homebrew, run `brew install mysql` and then `brew services start mysql`. Homebrew sets no root password, so just press Enter when MySQL asks for one.
+- **MySQL Server 8.0 or newer.** Newer version numbers are fine. Remember the root password you choose while installing.
+  - **Windows:** download **MySQL Installer** from dev.mysql.com/downloads/installer/. Choose **Server only**, keep the default settings, and skip the sample databases if it offers them.
+  - **Mac with Homebrew:** run `brew install mysql` and then `brew services start mysql`. Homebrew sets no root password, so just press Enter when MySQL asks for one.
 
 ### 1. Get the Code
 
@@ -51,7 +53,7 @@ Run every remaining command from inside that folder.
 npm install
 ```
 
-Run this again after any `git pull` that changes `package.json`.
+Run it in the same folder you start the app from, because each copy of the project needs its own. Run it again after any `git pull` that changes `package.json`.
 
 ### 3. Create the Local Database
 
@@ -60,6 +62,14 @@ Start the MySQL client from the repository folder and sign in as root:
 ```
 mysql -u root -p
 ```
+
+On Windows, Command Prompt usually cannot find `mysql`, because the installer does not add it to your path. Use the full path instead, still from the repository folder. Open `C:\Program Files\MySQL` to see your folder name, and replace `MySQL Server 8.0` below if yours is different:
+
+```
+"C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe" -u root -p
+```
+
+When you type the password, nothing shows on screen. That is normal.
 
 At the `mysql>` prompt, run the two scripts in this order, then create a login for the app:
 
@@ -70,7 +80,7 @@ CREATE USER 'course_app'@'localhost' IDENTIFIED BY 'choose-a-password';
 GRANT SELECT, INSERT, UPDATE, DELETE ON course_registration.* TO 'course_app'@'localhost';
 ```
 
-Replace `choose-a-password` with a password of your own, and remember it for step 4. Then check the data loaded:
+Replace `choose-a-password` with a password of your own, and remember it for step 4. Use only letters and numbers, because characters such as `#` can break the `.env` file. Then check the data loaded:
 
 ```
 SELECT COUNT(*) FROM Student;
@@ -110,11 +120,13 @@ The terminal should print `Course registration system running on port 3000` foll
 - `http://localhost:3000` shows the home page.
 - `http://localhost:3000/health` shows `{"status":"ok","database":"connected"}`.
 
+Only the `Database connection OK` line and the `/health` page prove the database is connected. The pages themselves (search, login, registration) still use built-in sample data until the endpoints are built, so they load even when the database is off.
+
 Press Ctrl+C in the terminal to stop the app.
 
 ### Test Accounts
 
-Every test student (student numbers 1001001 to 1001010) and instructor (IDs 1 to 6) in the database has the password `TestPass123`. These are fake accounts for testing only. Until the login endpoints are built, the pages use their own test accounts from `public/auth.js`.
+Every test student (student numbers 1001001 to 1001010) and instructor (IDs 1 to 6) in the database has the password `TestPass123`. These are fake accounts for testing only. The login page does not use them yet. Until the login endpoints are built, it checks three built-in accounts defined in `public/course-data.js`: `1001001` with `TestPass123`, `1001002` with `TestPass456`, and `1001003` with `TestPass789`.
 
 ### Start the Database Over
 
@@ -133,9 +145,9 @@ The `course_app` login keeps its access, so `.env` does not need to change.
 
 | What you see | What to do |
 | --- | --- |
-| `mysql` is not recognized | MySQL is not on your path. On Windows, open "MySQL Command Line Client" from the Start menu instead, and give `source` the full path with forward slashes, such as `source C:/Users/you/course-registration-system/course_registration_schema.sql;`. |
+| `mysql` is not recognized | Windows does not know where MySQL is. Use the full path to `mysql.exe` shown in step 3. You can also open "MySQL Command Line Client" from the Start menu, and give `source` the full path with forward slashes, such as `source C:/Users/you/course-registration-system/course_registration_schema.sql;`. |
 | `Missing database settings: ...` | `.env` is missing, or it is not in the repository folder. Redo step 4. |
-| `Cannot find module 'express'` | Run `npm install`. |
+| `Cannot find module '...'` (any name) | Run `npm install` in the same folder you start the app from. Each copy of the project needs its own. |
 | `EADDRINUSE` | Port 3000 is already in use. Set `PORT=3001` in `.env` and use that port in the browser. |
 | `ER_ACCESS_DENIED_ERROR` | The username or password in `.env` does not match the login from step 3. |
 | `ER_BAD_DB_ERROR` | The database does not exist yet. Run the two scripts in step 3. |
