@@ -23,7 +23,7 @@ a browser.
 |------------|--------------------------------------------------------|--------|
 | TC-INFO-01 | Details page shows the required course fields          | Pass   |
 | TC-INFO-02 | Max enrollment is shown for a course with a session    | Pass   |
-| TC-INFO-03 | Max enrollment is shown for a course with no session   | Fail   |
+| TC-INFO-03 | Max enrollment is shown for a course with no session   | Pass   |
 | TC-INFO-04 | Session days, times, and location are shown            | Pass   |
 | TC-INFO-05 | Available seats are calculated correctly               | Pass   |
 | TC-INFO-06 | Details page matches the data for all 7 courses        | Pass   |
