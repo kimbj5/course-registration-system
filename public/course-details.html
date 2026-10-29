@@ -89,9 +89,17 @@ async function loadCourses() {
             document.getElementById("continue-link").href =
             "student-registration.html?course=" + encodeURIComponent(course.code);
             document.getElementById("course-name").textContent = course.name;
-            document.getElementById("course-number").textContent = course.code;
+           document.getElementById("course-number").textContent =
+    course.department + " " + course.number;
             document.getElementById("course-credits").textContent = course.credits;
-            document.getElementById("course-instructor").textContent = course.instructor;
+           document.getElementById("course-instructor").textContent =
+    course.sessions && course.sessions.length > 0
+        ? course.sessions.map(session =>
+            session.instructor
+                ? session.instructor.first_name + " " + session.instructor.last_name
+                : "Not assigned"
+        ).join(", ")
+        : "Not assigned";
             document.getElementById("course-prerequisites").textContent =
                 course.prerequisites || "None listed";
             document.getElementById("course-modality").textContent =
@@ -99,9 +107,9 @@ async function loadCourses() {
             document.getElementById("course-maximum-enrollment").textContent =
     course.maximumEnrollment ?? "Not specified";
 
-            const courseSessions = allSessions.filter(
-                session => session.courseCode === course.code
-            );
+            const courseSessions = Array.isArray(course.sessions)
+    ? course.sessions
+    : [];
 
             const container = document.getElementById("session-details");
             container.replaceChildren();
@@ -119,17 +127,20 @@ async function loadCourses() {
                 section.appendChild(heading);
 
                 const details = [
-                    ["Meeting Days", session.days],
-                    ["Start Time", session.startTime],
-                    ["End Time", session.endTime],
-                    ["Location", session.location],
-                    ["Enrolled Students", session.currentEnrollment],
-                    ["Maximum Enrollment", session.maximumEnrollment],
-                    ["Available Seats", Math.max(
-                        0,
-                        session.maximumEnrollment - session.currentEnrollment
-                    )]
-                ];
+    ["Meeting Days", session.days],
+    ["Time", session.time],
+    ["Location", session.location],
+    ["Instructor", session.instructor
+        ? session.instructor.first_name + " " + session.instructor.last_name
+        : "Not assigned"],
+    ["Enrolled Students", session.enrolled_count],
+    ["Maximum Enrollment", session.max_enrollment],
+    ["Available Seats", Math.max(
+        0,
+        Number(session.max_enrollment || 0) -
+        Number(session.enrolled_count || 0)
+    )]
+];
 
                 details.forEach(([label, value]) => {
                     const paragraph = document.createElement("p");
@@ -147,8 +158,8 @@ registerButton.textContent = "Register for This Session";
 
 registerButton.addEventListener("click", function() {
     const url = new URL("student-registration.html", window.location.href);
-    url.searchParams.set("course", course.code);
-    url.searchParams.set("session", session.id);
+    url.searchParams.set("course", course.course_id);
+   url.searchParams.set("session", session.session_id);
     window.location.href = url.href;
 });
 
@@ -158,17 +169,37 @@ section.appendChild(registerButton);
         }
 
         courseSelect.addEventListener("change", () => {
-            const selectedCourse = courses.find(
-                course => course.code === courseSelect.value
-            );
+    const selectedCourse = courses.find(
+        course => String(course.course_id) === courseSelect.value
+    );
+
+    if (selectedCourse) {
+        displayCourse(selectedCourse);
+    }
+});
 
             if (selectedCourse) {
                 displayCourse(selectedCourse);
             }
         });
 
-        const requestedCourse =
-            new URLSearchParams(window.location.search).get("course");
+       async function initializeCourseDetails() {
+    await loadCourses();
+
+    const requestedCourse =
+        new URLSearchParams(window.location.search).get("course");
+
+    if (courses.length > 0) {
+        const initialCourse = courses.find(
+            course => String(course.course_id) === requestedCourse
+        ) || courses[0];
+
+        courseSelect.value = String(initialCourse.course_id);
+        displayCourse(initialCourse);
+    }
+}
+
+initializeCourseDetails();
 
         if (courses.length > 0) {
             const initialCourse = courses.find(
