@@ -57,7 +57,34 @@
 
     <script>
         const courseSelect = document.getElementById("course-select");
+let courses = [];
+let allSessions = [];
+async function loadCourses() {
+    try {
+        const response = await fetch("/courses");
 
+        if (!response.ok) {
+            throw new Error("Could not load courses");
+        }
+
+        const data = await response.json();
+        courses = data.courses || [];
+
+        courseSelect.replaceChildren();
+
+        courses.forEach(course => {
+            const option = document.createElement("option");
+            option.value = course.course_id;
+            option.textContent = course.number + " - " + course.name;
+            courseSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error("Failed to load courses:", error);
+        document.getElementById("session-details").textContent =
+            "Course data could not be loaded.";
+    }
+}
         function displayCourse(course) {
             document.getElementById("continue-link").href =
             "student-registration.html?course=" + encodeURIComponent(course.code);
@@ -129,13 +156,6 @@ section.appendChild(registerButton);
                 container.appendChild(section);
             });
         }
-
-        courses.forEach(course => {
-            const option = document.createElement("option");
-            option.value = course.code;
-            option.textContent = course.code + " - " + course.name;
-            courseSelect.appendChild(option);
-        });
 
         courseSelect.addEventListener("change", () => {
             const selectedCourse = courses.find(
