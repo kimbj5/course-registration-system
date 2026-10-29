@@ -71,6 +71,8 @@
                 course.prerequisites || "None listed";
             document.getElementById("course-modality").textContent =
                 course.modality || "Not specified";
+            document.getElementById("course-maximum-enrollment").textContent =
+    course.maximumEnrollment ?? "Not specified";
 
             const courseSessions = allSessions.filter(
                 session => session.courseCode === course.code
