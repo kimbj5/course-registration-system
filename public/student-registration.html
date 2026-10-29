@@ -96,8 +96,9 @@
         // Track sessions enrolled in by the current student
         const enrolledSessionIds = new Set();
         // Course picked on the search page, e.g. student-registration.html?course=INFO%20320
-        const selectedCode =
-            new URLSearchParams(window.location.search).get("course");
+    const urlParams = new URLSearchParams(window.location.search);
+const selectedCode = urlParams.get("course");
+const selectedSessionId = urlParams.get("session");
         // Keep track of session enrollment counts during this page visit
         const sessionEnrollment = {};
 
@@ -159,9 +160,14 @@
             card.className = "session-card";
 
         // Highlight the sessions of the course chosen on the search page
-            if (selectedCode && course.code === selectedCode) {
-                card.classList.add("selected");
-            }
+           if (
+    selectedSessionId &&
+    String(session.id) === String(selectedSessionId)
+) {
+    card.classList.add("selected");
+} else if (selectedCode && course.code === selectedCode) {
+    card.classList.add("selected");
+}
             
             const heading = document.createElement("h4");
             heading.textContent =
