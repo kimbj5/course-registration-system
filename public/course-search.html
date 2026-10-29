@@ -40,12 +40,7 @@
                 <label for="department">Department</label>
                 <select id="department">
                     <option value="">All Departments</option>
-                    <option value="Information Systems">Information Systems</option>
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="Business">Business</option>
-                    <option value="Mathematics">Mathematics</option>
-                    <option value="English">English</option>
-                </select>
+                                    </select>
             </div>
 
             <div class="form-group">
@@ -95,14 +90,36 @@
     <p>Online Course Registration System</p>
 </footer>
 
-<!-- Load the shared course data before the page script. -->
-<script src="course-data.js"></script>
-
 <script>
-    // Use the shared course list defined in course-data.js.
-    const courses = Array.isArray(testCourses) ? testCourses : [];
+    // Course data comes from the API (GET /courses), which reads the database.
+    // Nothing about the courses is stored in this page.
+    let departmentsFilled = false;
 
-    console.log("Courses loaded:", courses);
+    // Fill the Department dropdown with the departments found in the database.
+    function fillDepartments(courseList) {
+        const select = document.getElementById("department");
+        const names = Array.from(new Set(courseList.map(function(course) {
+            return course.department;
+        }))).sort();
+
+        names.forEach(function(name) {
+            const option = document.createElement("option");
+            option.value = name;
+            option.textContent = name;
+            select.appendChild(option);
+        });
+    }
+
+    // Add one "Label: value" line to a course card.
+    function addInfoLine(container, label, value) {
+        const paragraph = document.createElement("p");
+        const strong = document.createElement("strong");
+
+        strong.textContent = label + ": ";
+        paragraph.appendChild(strong);
+        paragraph.appendChild(document.createTextNode(value));
+        container.appendChild(paragraph);
+    }
 
     function displayCourses(courseList) {
         const results = document.getElementById("course-results");
@@ -125,121 +142,117 @@
             return;
         }
 
-        resultCount.textContent =
-            courseList.length + " course(s) found.";
+        resultCount.textContent = courseList.length + " course(s) found.";
 
         courseList.forEach(function(course) {
-            // Not every course necessarily has a scheduled session.
-            const courseSessions = Array.isArray(course.sessions)
-                ? course.sessions
-                : [];
+            // A course may have no scheduled sessions yet.
+            const sessions = Array.isArray(course.sessions) ? course.sessions : [];
 
-            const enrollmentValues = courseSessions
-                .map(function(session) {
-                    return Number(
-                        session.maximumEnrollment ??
-                        session.maxEnrollment
-                    );
-                })
-                .filter(function(value) {
-                    return Number.isFinite(value);
-                });
+            // The instructor and maximum enrollment belong to each session.
+            const instructors = Array.from(new Set(sessions.map(function(session) {
+                return session.instructor.first_name + " " + session.instructor.last_name;
+            })));
 
-            const maximumEnrollment = courseSessions.length > 0
-                ? courseSessions.map(function(session) {
-                return session.maximumEnrollment;
-            }).join(", ")
-            : course.maximumEnrollment;
-            
-           // const maximumEnrollment =
-                //enrollmentValues.length > 0
-                    //? enrollmentValues.join(", ")
-                  //  : "Not yet scheduled";
+            const maximumEnrollment = sessions.length > 0
+                ? sessions.map(function(session) {
+                    return session.max_enrollment;
+                }).join(", ")
+                : "Not yet scheduled";
 
-            const courseCode = course.code || "";
-            const courseNumber = course.number || "";
-            const courseName = course.name || "Unnamed Course";
-
-            const heading = courseCode && courseNumber &&
-                !courseCode.endsWith(courseNumber)
-                ? courseCode + " " + courseNumber
-                : (courseCode || courseNumber);
+            const prerequisites = Array.isArray(course.prerequisites) &&
+                course.prerequisites.length > 0
+                ? course.prerequisites.map(function(prerequisite) {
+                    return prerequisite.number;
+                }).join(", ")
+                : "None listed";
 
             const card = document.createElement("div");
             card.className = "course-card";
 
-            card.innerHTML = `
-                <h3></h3>
+            const heading = document.createElement("h3");
+            heading.textContent = course.number + " - " + course.name;
+            card.appendChild(heading);
 
-                <p class="course-description"></p>
+            const description = document.createElement("p");
+            description.className = "course-description";
+            description.textContent =
+                "This course is offered through the " + course.department + " department.";
+            card.appendChild(description);
 
-                <div class="course-info">
-                    <p><strong>Department:</strong> ${course.department || "Not specified"}</p>
-                    <p><strong>Instructor:</strong> ${course.instructor || "Not assigned"}</p>
-                    <p><strong>Credit Hours:</strong> ${course.credits ?? "Not specified"}</p>
-                    <p><strong>Prerequisites:</strong> ${course.prerequisites || "None listed"}</p>
-                    <p><strong>Modality:</strong> ${course.modality || "Not specified"}</p>
-                    <p><strong>Maximum Enrollment:</strong> ${maximumEnrollment}</p>
-                </div>
+            const info = document.createElement("div");
+            info.className = "course-info";
+            addInfoLine(info, "Department", course.department);
+            addInfoLine(info, "Instructor", instructors.length > 0 ? instructors.join(", ") : "Not assigned");
+            addInfoLine(info, "Credit Hours", course.credits);
+            addInfoLine(info, "Prerequisites", prerequisites);
+            addInfoLine(info, "Maximum Enrollment", maximumEnrollment);
+            card.appendChild(info);
 
-                <a href="course-details.html?course=${encodeURIComponent(courseCode)}" class="register-link">
-                    Register for Session
-                </a>
-            `;
-
-            // Use textContent for course names to avoid interpreting them as HTML.
-            card.querySelector("h3").textContent =
-                (heading ? heading + " - " : "") + courseName;
-
-            card.querySelector(".course-description").textContent =
-                "This course is offered through the " +
-                (course.department || "unspecified") +
-                " department.";
+            const link = document.createElement("a");
+            link.className = "register-link";
+            link.href = "course-details.html?course=" + encodeURIComponent(course.course_id);
+            link.textContent = "Register for Session";
+            card.appendChild(link);
 
             results.appendChild(card);
         });
     }
 
+    // Ask the API for courses. Empty filters are left out of the request.
+    async function fetchCourses(filters) {
+        const params = new URLSearchParams();
+
+        if (filters.department) { params.set("department", filters.department); }
+        if (filters.instructor) { params.set("instructor", filters.instructor); }
+        if (filters.number) { params.set("number", filters.number); }
+
+        const query = params.toString();
+        const response = await fetch("/courses" + (query ? "?" + query : ""));
+
+        if (!response.ok) {
+            throw new Error("The server answered with status " + response.status);
+        }
+
+        const data = await response.json();
+        return data.courses;
+    }
+
+    async function runSearch(filters) {
+        const results = document.getElementById("course-results");
+        const resultCount = document.getElementById("result-count");
+        const hasFilters = Boolean(filters.department || filters.instructor || filters.number);
+
+        resultCount.textContent = "Loading courses...";
+
+        try {
+            const courseList = await fetchCourses(filters);
+
+            // The first time we see every course, build the department dropdown from it.
+            if (!departmentsFilled && !hasFilters) {
+                fillDepartments(courseList);
+                departmentsFilled = true;
+            }
+
+            displayCourses(courseList);
+        } catch (error) {
+            console.error("Course search failed:", error);
+
+            resultCount.textContent = "Could not load courses.";
+            results.innerHTML = `
+                <div class="no-results">
+                    <h3>Something Went Wrong</h3>
+                    <p>The courses could not be loaded. Please try again.</p>
+                </div>
+            `;
+        }
+    }
+
     function searchCourses() {
-        const department =
-            document.getElementById("department").value;
-
-        const instructor =
-            document.getElementById("instructor").value
-                .toLowerCase()
-                .trim();
-
-        const courseNumber =
-            document.getElementById("course-number").value
-                .toLowerCase()
-                .trim();
-
-        const filteredCourses = courses.filter(function(course) {
-            const departmentMatch =
-                department === "" ||
-                course.department === department;
-
-            const instructorMatch =
-                instructor === "" ||
-                String(course.instructor || "")
-                    .toLowerCase()
-                    .includes(instructor);
-
-            const numberMatch =
-                courseNumber === "" ||
-                String(course.number || "")
-                    .toLowerCase()
-                    .includes(courseNumber) ||
-                String(course.code || "")
-                    .toLowerCase()
-                    .includes(courseNumber);
-
-            return departmentMatch &&
-                instructorMatch &&
-                numberMatch;
+        runSearch({
+            department: document.getElementById("department").value,
+            instructor: document.getElementById("instructor").value.trim(),
+            number: document.getElementById("course-number").value.trim()
         });
-
-        displayCourses(filteredCourses);
     }
 
     function clearSearch() {
@@ -247,11 +260,11 @@
         document.getElementById("instructor").value = "";
         document.getElementById("course-number").value = "";
 
-        displayCourses(courses);
+        runSearch({});
     }
 
     // Show every course when the page first opens.
-    displayCourses(courses);
+    runSearch({});
 </script>
 
 </body>
