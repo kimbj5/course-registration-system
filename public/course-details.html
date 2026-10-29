@@ -113,7 +113,18 @@
                     );
                     section.appendChild(paragraph);
                 });
+const registerButton = document.createElement("button");
+registerButton.type = "button";
+registerButton.textContent = "Register for This Session";
 
+registerButton.addEventListener("click", function() {
+    const url = new URL("student-registration.html", window.location.href);
+    url.searchParams.set("course", course.code);
+    url.searchParams.set("session", session.id);
+    window.location.href = url.href;
+});
+
+section.appendChild(registerButton);
                 container.appendChild(section);
             });
         }
