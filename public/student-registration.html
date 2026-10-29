@@ -32,7 +32,7 @@
         <h2>Student Registration</h2>
 
         <p>
-            View your enrolled sessions and register for available courses.
+            Register for an available course session.
         </p>
 
         <!-- WHO IS LOGGED IN -->
@@ -43,16 +43,6 @@
 
         <div id="selected-course"></div>
         
-        <!-- CURRENTLY ENROLLED -->
-
-        <div class="registration-section">
-
-            <h3>Currently Enrolled Sessions</h3>
-
-            <div id="enrolled-sessions"></div>
-
-        </div>
-
         <!-- AVAILABLE SESSIONS -->
 
         <div class="registration-section">
@@ -69,121 +59,74 @@
 
     </main>
 
-    <!-- Load shared course and session data first -->
-    <script src="course-data.js"></script>
-
     <script>
-        // Test student accounts for the registration prototype
-       // const studentAccounts = [
-        //    {
-     //           studentId: "ID",
-     //           password: "password"
-     //       },
-     //       {
-     //           studentId: "1001001",
-    //            password: "TestPass123"
-    //        },
-    //        {
-    //            studentId: "1001002",
-    //            password: "TestPass456"
-   //         },
-   //         {
-   //             studentId: "1001003",
-  //              password: "TestPass789"
-  //          }
-  //      ];
+        // Everything on this page comes from the API, which reads the RDS database.
+        // Links can pick a course or session to highlight:
+        //   student-registration.html?course_id=3
+        //   student-registration.html?session_id=3  (or ?session=3, from the details page)
+        //   student-registration.html?course=INFO%20325  (a course code or a course_id)
+        const params = new URLSearchParams(window.location.search);
+        const selectedCourseId = params.get("course_id");
+        const selectedSessionId = params.get("session_id") || params.get("session");
+        const selectedCode = params.get("course");
 
-        // Track sessions enrolled in by the current student
-        const enrolledSessionIds = new Set();
-        // Course picked on the search page, e.g. student-registration.html?course=INFO%20320
-    const urlParams = new URLSearchParams(window.location.search);
-const selectedCode = urlParams.get("course");
-const selectedSessionId = urlParams.get("session");
-        // Keep track of session enrollment counts during this page visit
-        const sessionEnrollment = {};
+        // Send a request to the API with the student's login token.
+        // If the token is missing or expired, send the student back to log in.
+        async function api(path, options) {
+            const response = await fetch(path, Object.assign({}, options, {
+                headers: { "Authorization": "Bearer " + getAuthToken() }
+            }));
 
-        // Find a session by its ID
-        function findSession(sessionId) {
-            for (const course of testCourses) {
-                if (!Array.isArray(course.sessions)) {
-                    continue;
-                }
+            const data = await response.json().catch(function() {
+                return {};
+            });
 
-                const session = course.sessions.find(
-                    item => String(item.id) === String(sessionId)
-                );
-
-                if (session) {
-                    return {
-                        course: course,
-                        session: session
-                    };
-                }
+            if (response.status === 401) {
+                logout();
+                requireLogin();
+                throw new Error("NOT_LOGGED_IN");
             }
 
-            return null;
+            return { ok: response.ok, data: data };
         }
 
-        // Initialize enrollment counts and any pre-enrolled sessions
-        function initializeSessions() {
-            testCourses.forEach(function(course) {
-                if (!Array.isArray(course.sessions)) {
-                    console.warn(
-                        "Course has no sessions array:",
-                        course.code,
-                        course.number,
-                        course.name
-                    );
-                    return;
-                }
-
-                course.sessions.forEach(function(session) {
-                    const sessionId = String(session.id);
-
-                    sessionEnrollment[sessionId] =
-                        Number(session.currentEnrollment ?? 0);
-
-                    if (session.initiallyEnrolled === true) {
-                        enrolledSessionIds.add(sessionId);
-                    }
-                });
-            });
+        function showMessage(text, type) {
+            const message = document.getElementById("registration-message");
+            message.textContent = text;
+            message.className = "message " + type;
+            message.style.display = "block";
         }
 
-        // Build a session card from the shared course data
-        function createSessionCard(course, session, isEnrolled) {
-            const sessionId = String(session.id);
-            const current = sessionEnrollment[sessionId];
-            const maximum = Number(session.maximumEnrollment);
+        function isSelected(session) {
+            return String(session.session_id) === selectedSessionId ||
+                String(session.course.course_id) === selectedCourseId ||
+                String(session.course.course_id) === selectedCode ||
+                session.course.number === selectedCode;
+        }
 
+        // Build a session card from a session returned by the API
+        function createSessionCard(session) {
             const card = document.createElement("div");
             card.className = "session-card";
 
-        // Highlight the sessions of the course chosen on the search page
-           if (
-    selectedSessionId &&
-    String(session.id) === String(selectedSessionId)
-) {
-    card.classList.add("selected");
-} else if (selectedCode && course.code === selectedCode) {
-    card.classList.add("selected");
-}
-            
+            if (isSelected(session)) {
+                card.classList.add("selected");
+            }
+
             const heading = document.createElement("h4");
             heading.textContent =
-                `${course.code} - Section ${session.section}`;
+                session.course.number + " - Section " + session.section;
             card.appendChild(heading);
 
             const details = [
-                ["Course", course.name],
-                ["Instructor", course.instructor],
-                ["Department", course.department],
+                ["Course", session.course.name],
+                ["Instructor", session.instructor.first_name + " " + session.instructor.last_name],
+                ["Department", session.course.department],
                 ["Days", session.days],
-                ["Time", session.startTime + " - " + session.endTime],
+                ["Time", session.time],
                 ["Location", session.location],
-                ["Modality", course.modality],
-                ["Credits", course.credits],
-                ["Enrollment", `${current} / ${maximum}`]
+                ["Credits", session.course.credits],
+                ["Enrollment", session.enrolled_count + " / " + session.max_enrollment]
             ];
 
             details.forEach(function(detail) {
@@ -193,231 +136,145 @@ const selectedSessionId = urlParams.get("session");
                 label.textContent = detail[0] + ": ";
                 paragraph.appendChild(label);
                 paragraph.appendChild(
-                    document.createTextNode(
-                        String(detail[1] ?? "Not specified")
-                    )
+                    document.createTextNode(String(detail[1] ?? "Not specified"))
                 );
 
                 card.appendChild(paragraph);
             });
 
-            if (isEnrolled) {
-                const status = document.createElement("p");
-                status.className = "enrolled";
-                status.textContent = "Status: Enrolled";
-                card.appendChild(status);
-            } else {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.className = "register-button";
-                button.textContent =
-                    current >= maximum ? "Session Full" : "Register";
+            const isFull = session.enrolled_count >= session.max_enrollment;
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "register-button";
+            button.textContent = isFull ? "Session Full" : "Register";
+            button.disabled = isFull;
 
-                button.disabled = current >= maximum;
+            button.addEventListener("click", function() {
+                registerForSession(session.session_id, button);
+            });
 
-                button.addEventListener("click", function() {
-                    registerForCourse(sessionId);
-                });
-
-                card.appendChild(button);
-            }
+            card.appendChild(button);
 
             return card;
         }
 
-        // Display all enrolled and available sessions
-        function displaySessions() {
-            const enrolledContainer =
-                document.getElementById("enrolled-sessions");
+        function showList(container, cards, emptyText) {
+            container.innerHTML = "";
 
-            const availableContainer =
-                document.getElementById("available-sessions");
+            cards.forEach(function(card) {
+                container.appendChild(card);
+            });
 
-            enrolledContainer.innerHTML = "";
-            availableContainer.innerHTML = "";
+            if (cards.length === 0) {
+                const emptyMessage = document.createElement("p");
+                emptyMessage.className = "empty-message";
+                emptyMessage.textContent = emptyText;
+                container.appendChild(emptyMessage);
+            }
+        }
 
-            testCourses.forEach(function(course) {
-                if (!Array.isArray(course.sessions)) {
-                    console.warn(
-                        "Skipping course without sessions:",
-                        course.code,
-                        course.number,
-                        course.name
+        // Load all sessions with their seat counts and show them
+        async function loadSessions() {
+            const result = await api("/sessions/available");
+
+            if (!result.ok) {
+                showMessage("Sessions could not be loaded. Please refresh the page.", "error");
+                return null;
+            }
+
+            showList(
+                document.getElementById("available-sessions"),
+                result.data.sessions.map(createSessionCard),
+                "No sessions are currently available to register for."
+            );
+
+            return result.data.sessions;
+        }
+
+        // Register the logged-in student. The API checks seats and duplicates
+        // and records the registration in the database.
+        async function registerForSession(sessionId, button) {
+            button.disabled = true;
+
+            try {
+                const result = await api(
+                    "/sessions/" + encodeURIComponent(sessionId) + "/register",
+                    { method: "POST" }
+                );
+
+                if (result.ok) {
+                    showMessage(result.data.message, "success");
+                } else {
+                    showMessage(
+                        result.data.error?.message || "Registration failed. Please try again.",
+                        "error"
                     );
-                    return;
                 }
 
-                course.sessions.forEach(function(session) {
-                    const sessionId = String(session.id);
-
-                    const isEnrolled =
-                        enrolledSessionIds.has(sessionId);
-
-                    const card = createSessionCard(
-                        course,
-                        session,
-                        isEnrolled
-                    );
-
-                    if (isEnrolled) {
-                        enrolledContainer.appendChild(card);
-                    } else {
-                        availableContainer.appendChild(card);
-                    }
-                });
-            });
-
-            if (enrolledContainer.children.length === 0) {
-                const emptyMessage = document.createElement("p");
-                emptyMessage.className = "empty-message";
-                emptyMessage.textContent =
-                    "You are not enrolled in any sessions yet.";
-
-                enrolledContainer.appendChild(emptyMessage);
-            }
-
-            if (availableContainer.children.length === 0) {
-                const emptyMessage = document.createElement("p");
-                emptyMessage.className = "empty-message";
-                emptyMessage.textContent =
-                    "No sessions are currently available to register for.";
-
-                availableContainer.appendChild(emptyMessage);
+                // Reload from the database so the counts are up to date
+                await loadSessions();
+            } catch (error) {
+                if (error.message !== "NOT_LOGGED_IN") {
+                    showMessage("Unable to connect to the server. Please try again.", "error");
+                    button.disabled = false;
+                }
             }
         }
-        
-        // Register the logged-in student for a specific session
-        function registerForCourse(sessionId) {
-            const message =
-                document.getElementById("registration-message");
 
-        // Require a valid login (set by student-login.html)
-            const studentID = getLoggedInStudent();
+        // Show which course was chosen, or explain if it has no sessions
+        function showSelectedCourse(sessions) {
+            const box = document.getElementById("selected-course");
 
-            if (studentID === null) {
-                message.textContent =
-                    "Please log in with valid credentials before registering.";
-
-                message.className = "message error";
-                message.style.display = "block";
+            if (!selectedCourseId && !selectedSessionId && !selectedCode) {
                 return;
             }
 
-            // Find the selected session
-            const result = findSession(sessionId);
+            const match = sessions.find(isSelected);
 
-            if (!result) {
-                message.textContent = "Session not found.";
-                message.className = "message error";
-                message.style.display = "block";
-                return;
-            }
-
-            const course = result.course;
-            const session = result.session;
-            const key = String(session.id);
-
-            // Prevent duplicate registration
-            if (enrolledSessionIds.has(key)) {
-                message.textContent =
-                    "You are already registered for this session.";
-
-                message.className = "message error";
-                message.style.display = "block";
-                return;
-            }
-
-            // Prevent registration when the session is full
-            const maximum = Number(session.maximumEnrollment);
-
-            if (sessionEnrollment[key] >= maximum) {
-                message.textContent =
-                    `${course.code}, Section ${session.section} is full.`;
-
-                message.className = "message error";
-                message.style.display = "block";
-
-                displaySessions();
-                return;
-            }
-
-            // Add the session to the student's enrolled sessions
-            enrolledSessionIds.add(key);
-
-            // Increase the displayed enrollment count
-            sessionEnrollment[key]++;
-
-            // Show confirmation
-            message.textContent =
-                `Successfully registered for ${course.code}, Section ${session.section}.`;
-
-            message.className = "message success";
-            message.style.display = "block";
-
-            // Refresh the enrolled and available session lists
-            displaySessions();
-        }
-
-            // Show which course was chosen, or explain if it has no sessions
-            function showSelectedCourse() {
-                const box = document.getElementById("selected-course");
-    
-                if (!selectedCode) {
-            return;
-            }
-        
-            const course = testCourses.find(function(item) {
-                return item.code === selectedCode;
-            });
-        
-            const hasSessions =
-                course && Array.isArray(course.sessions) && course.sessions.length > 0;
-        
-            if (!course) {
-                box.innerHTML =
-                    '<div class="message error" style="display:block;"></div>';
-                box.firstChild.textContent = "That course could not be found.";
-            } else if (!hasSessions) {
-                box.innerHTML =
-                    '<div class="message error" style="display:block;"></div>';
-                box.firstChild.textContent =
-                    course.code + " - " + course.name +
-                    " has no sessions open for registration right now.";
-            } else {
+            if (match) {
                 box.innerHTML = '<div class="selected-banner"></div>';
                 box.firstChild.textContent =
-                    "Selected course: " + course.code + " - " + course.name;
+                    "Selected course: " + match.course.number + " - " + match.course.name;
+            } else {
+                box.innerHTML = '<div class="message error" style="display:block;"></div>';
+                box.firstChild.textContent =
+                    "That course has no sessions open for registration right now.";
+            }
+        }
+
+        async function startPage() {
+            const student = getLoggedInStudentData();
+
+            document.getElementById("login-status").textContent = student
+                ? "Logged in as " + student.first_name + " " + student.last_name +
+                  " (student " + student.student_id + ")."
+                : "Logged in as student " + getLoggedInStudent() + ".";
+
+            try {
+                const sessions = await loadSessions();
+
+                if (sessions) {
+                    showSelectedCourse(sessions);
+
+                    // Scroll to the chosen course's session card
+                    const chosenCard = document.querySelector(".session-card.selected");
+                    if (chosenCard) {
+                        chosenCard.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }
+                }
+            } catch (error) {
+                if (error.message !== "NOT_LOGGED_IN") {
+                    showMessage("Unable to connect to the server. Please try again.", "error");
                 }
             }
-            
-            // Initialize and display sessions when the page opens
-           if (typeof testCourses !== "undefined" && Array.isArray(testCourses)) {
-        // course-data.js keeps sessions in a separate list, so attach each
-        // session to its course (skipped if the data is already nested)
-        if (typeof sessions !== "undefined") {
-            testCourses.forEach(function(course) {
-                if (!Array.isArray(course.sessions)) {
-                    course.sessions = sessions.filter(function(session) {
-                        return session.courseCode === course.code;
-                    });
-                }
-            });
         }
-               
-          document.getElementById("login-status").textContent =
-            "Logged in as student " + getLoggedInStudent() + ".";     
-        initializeSessions();
-        displaySessions();
-        showSelectedCourse();
 
-        // Scroll to the chosen course's session card(s)
-        const chosenCard = document.querySelector(".session-card.selected");
-        if (chosenCard) {
-            chosenCard.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-    } else {
-            document.getElementById("available-sessions").textContent =
-                "Course data could not be loaded. Check that course-data.js is in the same folder.";
+        if (getAuthToken()) {
+            startPage();
+        } else {
+            // Logged in before login tokens existed, so log in again
+            logout();
+            requireLogin();
         }
     </script>
 
